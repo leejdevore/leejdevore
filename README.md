@@ -1,7 +1,7 @@
 ## Hi there 👋
-🌱 I’m currently learning how this works so I can better lead innovation cycles.
-👯 I’m looking to collaborate on projects that look to improve the built environment, the process of design, and the way we collaborate.
-😄 Pronouns: He/Him/They
+- 🌱 I’m currently learning how this works so I can better lead innovation cycles.
+- 👯 I’m looking to collaborate on projects that look to improve the built environment, the process of design, and the way we collaborate.
+- 😄 Pronouns: He/Him/They
 
 <!--
 **leejdevore/leejdevore** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
