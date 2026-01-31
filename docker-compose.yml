@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: devsight-db
+    environment:
+      POSTGRES_USER: devsight
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devsight_dev}
+      POSTGRES_DB: devsight
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devsight -d devsight"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: devsight-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  martin:
+    image: ghcr.io/maplibre/martin:v0.13.0
+    container_name: devsight-tiles
+    ports:
+      - "3001:3000"
+    environment:
+      DATABASE_URL: postgres://devsight:${POSTGRES_PASSWORD:-devsight_dev}@db:5432/devsight
+    depends_on:
+      db:
+        condition: service_healthy
+    command: --config /config/martin.yaml
+    volumes:
+      - ./config/martin.yaml:/config/martin.yaml:ro
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: devsight-api
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgres://devsight:${POSTGRES_PASSWORD:-devsight_dev}@db:5432/devsight
+      REDIS_URL: redis://redis:6379
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: devsight-web
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_TILES_URL: http://localhost:3001
+      NEXT_PUBLIC_LIVEBLOCKS_KEY: ${LIVEBLOCKS_PUBLIC_KEY:-}
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+
+volumes:
+  postgres_data:
+  redis_data:

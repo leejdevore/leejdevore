@@ -1,0 +1,79 @@
+# Martin Vector Tile Server Configuration
+# https://maplibre.org/martin/
+
+postgres:
+  connection_string: ${DATABASE_URL}
+
+  # Auto-discover tables with geometry columns
+  auto_publish:
+    tables:
+      from_schemas: public
+
+  tables:
+    # Main tax lots layer with enriched data
+    lots_enriched:
+      schema: public
+      table: lots_enriched
+      srid: 4326
+      geometry_column: geom
+      id_column: id
+      minzoom: 10
+      maxzoom: 22
+      bounds: [-74.3, 40.45, -73.65, 40.95]  # NYC bounds
+      properties:
+        - bbl
+        - address
+        - zoning_dist_1
+        - special_district_1
+        - built_far_pct
+        - unbuilt_sf
+        - lot_area_sf
+        - bldg_area_sf
+        - num_floors
+        - year_built
+        - owner_name
+        - landmark_status
+        - opportunity_score
+        - distress_score
+
+    # Centroids for clustering at lower zoom levels
+    lot_centroids:
+      schema: public
+      table: lots_enriched
+      srid: 4326
+      geometry_column: centroid
+      id_column: id
+      minzoom: 8
+      maxzoom: 14
+      bounds: [-74.3, 40.45, -73.65, 40.95]
+      properties:
+        - bbl
+        - built_far_pct
+        - opportunity_score
+
+    # Landmarks layer
+    landmarks:
+      schema: public
+      table: landmarks
+      srid: 4326
+      geometry_column: geom
+      id_column: id
+      minzoom: 12
+      maxzoom: 22
+      properties:
+        - name
+        - landmark_type
+        - designation_date
+
+    # Zoning districts
+    zoning_districts:
+      schema: public
+      table: zoning_districts
+      srid: 4326
+      geometry_column: geom
+      id_column: id
+      minzoom: 10
+      maxzoom: 22
+      properties:
+        - zone_dist
+        - zone_type
